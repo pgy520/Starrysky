@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: #333;
+        }
+
+        #container {
+            /* padding: 50px; */
+        }
+
+        .konvajs-content {
+            margin: 0 auto;
+            box-shadow: 0 0 50px black;
+            background: black;
+        }
+
+        .stats {
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 1;
+            opacity: 0.3 !important;
+        }
+
+        .stats:hover {
+            opacity: 1 !important;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="container">
+
+    </div>
+    <script src="stopExecutionOnTimeout.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/r16/Stats.min.js"></script>
+    <script src="https://public.kelvinh.studio/cdn/js/kelvin_util.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/victor/1.1.0/victor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/konva/1.7.6/konva.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinycolor/1.4.1/tinycolor.min.js"></script>
+</body>
+
+</html>
+<script>
+    var _createClass = function () {
+        function defineProperties(target, props) {
+            for (var i = 0; i < props.length; i++) {
+                if (window.CP.shouldStopExecution(1)) {
+                    break;
+                }
+                var descriptor = props[i];
+                descriptor.enumerable = descriptor.enumerable || false;
+                descriptor.configurable = true;
+                if ("value" in descriptor) descriptor.writable = true;
+                Object.defineProperty(target, descriptor.key, descriptor);
+            }
+            window.CP.exitedLoop(1);
+        }
+        return function (Constructor, protoProps, staticProps) {
+            if (protoProps) defineProperties(Constructor.prototype, protoProps);
+            if (staticProps) defineProperties(Constructor, staticProps);
+            return Constructor;
+        };
+    }();
+
+    function _classCallCheck(instance, Constructor) {
+        if (!(instance instanceof Constructor)) {
+            throw new TypeError("Cannot call a class as a function");
+        }
+    }
+
+    var km = kelvinUtil.math;
+    var width = document.documentElement.clientWidth || document.body.clientWidth; //800;
+    var height = document.documentElement.clientHeight || document.body.clientHeight; //800;
+    var bgColor = 'black';
+    var bgOpacity = .03;
+    var color = {
+        red1: '#E74C3C',
+        red2: '#C0392B',
+        orange1: '#E67E22',
+        orange2: '#D35400',
+        yellow1: '#F1C40F',
+        yellow2: '#F39C12',
+        green1: '#2ECC71',
+        green2: '#27AE60',
+        mint1: '#1ABC9C',
+        mint2: '#16A085',
+        blue1: '#3498DB',
+        blue2: '#2980B9',
+        purple1: '#9B59B6',
+        purple2: '#8E44AD',
+        light1: '#ECF0F1',
+        light2: '#BDC3C7',
+        grey1: '#95A5A6',
+        grey2: '#7F8C8D',
+        dark1: '#34495E',
+        dark2: '#2C3E50'
+    };
+
+    var mouseX = 0;
+    var mouseY = 0;
+    var frameCount = 0;
+    var ss = [];
+    var ss2 = [];
+
+    var num = 800;
+    var delta = 400;
+    var mega = 1;
+
+    var stage = new Konva.Stage({
+        container: 'container',
+        width: width,
+        height: height
+    });
+
+    var layer = new Konva.FastLayer({
+        clearBeforeDraw: false
+    });
+    stage.add(layer);
+
+    var bg = new Konva.Rect({
+        x: 0,
+        y: 0,
+        width: width,
+        height: height,
+        fill: bgColor,
+        opacity: bgOpacity
+    });
+    layer.add(bg);
+    bg.moveToBottom();
+
+    // stats
+    var stats = new Stats();
+    stats.showPanel(0);
+    stats.domElement.className += ' stats';
+    document.body.appendChild(stats.domElement);
+
+    var Shit = function () {
+        function Shit(location, direction, speed) {
+            _classCallCheck(this, Shit);
+
+            this.vel = new Victor(0, 0);
+            this.loc = location;
+            this.dir = direction;
+            this.speed = speed;
+            this.d = 1;
+            this.circle = new Konva.Circle({
+                radius: 1,
+                x: 0,
+                y: 0,
+                fill: color.mint1,
+                globalCompositeOperation: 'lighter'
+            });
+            layer.add(this.circle);
+        }
+
+        _createClass(Shit, [{
+            key: 'update',
+            value: function update() {
+                // calc
+                var angle = km.noise(this.loc.x / delta, this.loc.y / delta, frameCount / delta) *
+                    km.TWO_PI * mega;
+                this.dir.x = km.cos(angle);
+                this.dir.y = km.sin(angle);
+                this.vel = this.dir.clone();
+                this.vel.multiply(new Victor(this.speed * this.d, this.speed * this.d));
+                this.loc.add(this.vel);
+                // hit boundary
+                if (this.loc.x < 0 || this.loc.x > width || this.loc.y < 0 || this.loc.y > height) {
+                    this.loc.x = km.random(width * 1.2);
+                    this.loc.y = km.random(height);
+                }
+                // move
+                this.circle.x(this.loc.x);
+                this.circle.y(this.loc.y);
+            }
+        }]);
+
+        return Shit;
+    }();
+
+    new Konva.Animation(function (frame) {
+        stats.begin();
+
+        var z = 0;
+
+        for (var i = 0; i < num; i++) {
+            if (window.CP.shouldStopExecution(2)) {
+                break;
+            }
+            var shit = void 0;
+            if (typeof ss[z] === 'undefined') {
+                var loc = new Victor(km.random(width * 1.2), km.random(height), 2);
+                var angle = km.random(km.TWO_PI);
+                var dir = new Victor(km.cos(angle), km.sin(angle));
+                var speed = km.random(.5, 2);
+                shit = new Shit(loc, dir, speed);
+                ss.push(shit);
+            } else {
+                shit = ss[z];
+            }
+
+            shit.update();
+            z++;
+        }
+        window.CP.exitedLoop(2);
+
+
+        frameCount++;
+        stats.end();
+    }, layer).start();
+</script>
